@@ -1027,54 +1027,32 @@
 
       async function renderizarRanking() {
         const container = document.getElementById("seccion-ranking");
-        const partidosConResultado = listaPartidos.filter(
+        const hayResultados = listaPartidos.some(
           (p) => p.resultado_equipo_1 !== null && p.resultado_equipo_2 !== null,
         );
 
-        if (!partidosConResultado.length) {
+        if (!hayResultados) {
           container.innerHTML =
             '<p class="estado-vacio">No hay resultados cargados aún.</p>';
           return;
         }
 
         container.innerHTML =
-          '<p class="estado-vacio">Calculando ranking...</p>';
+          '<p class="estado-vacio">Cargando ranking...</p>';
 
-        const idsConResultado = partidosConResultado.map((p) => p.id);
+        const { data: todosUsuarios, error: errUsuarios } = await supabaseClient
+          .from("usuarios")
+          .select("id, nombre, puntos")
+          .order("puntos", { ascending: false });
 
-        const [{ data: todosUsuarios, error: errUsuarios }, { data: predicciones, error: errPred }] =
-          await Promise.all([
-            supabaseClient.from("usuarios").select("id, nombre"),
-            supabaseClient
-              .from("predicciones")
-              .select("usuario_id, partido_id, goles_equipo_1, goles_equipo_2")
-              .in("partido_id", idsConResultado),
-          ]);
-
-        if (errUsuarios || errPred) {
-          console.error(errUsuarios || errPred);
+        if (errUsuarios) {
+          console.error(errUsuarios);
           container.innerHTML =
             '<p class="estado-vacio" style="color:#e74c3c">Error al cargar el ranking.</p>';
           return;
         }
 
-        const usuarioMap = {};
-        todosUsuarios.forEach((u) => {
-          if (u.nombre !== "adminmlc") usuarioMap[u.id] = u.nombre;
-        });
-
-        const puntajes = {};
-        predicciones.forEach((pred) => {
-          const partido = listaPartidos.find((p) => p.id === pred.partido_id);
-          const nombre = usuarioMap[pred.usuario_id];
-          if (!partido || !nombre) return;
-          if (!puntajes[pred.usuario_id]) {
-            puntajes[pred.usuario_id] = { nombre, puntos: 0 };
-          }
-          puntajes[pred.usuario_id].puntos += calcularPuntos(pred, partido);
-        });
-
-        const ranking = Object.values(puntajes).sort((a, b) => b.puntos - a.puntos);
+        const ranking = (todosUsuarios || []).filter((u) => u.nombre !== "adminmlc");
 
         const medallas = ["🥇", "🥈", "🥉"];
         const filas = ranking
@@ -1667,15 +1645,18 @@
         btn.innerText = "Guardando...";
 
         try {
-          const { error } = await supabaseClient
+          const { data: filas, error } = await supabaseClient
             .from("partidos")
             .update({
               resultado_equipo_1: parseInt(score1, 10),
               resultado_equipo_2: parseInt(score2, 10),
             })
-            .eq("id", partidoParaResultadoId);
+            .eq("id", partidoParaResultadoId)
+            .select();
 
           if (error) throw error;
+          if (!filas || filas.length === 0)
+            throw new Error("No se pudo guardar: revisá las políticas RLS de Supabase.");
 
           const idx = listaPartidos.findIndex((p) => p.id === partidoParaResultadoId);
           if (idx !== -1) {
@@ -1683,15 +1664,51 @@
             listaPartidos[idx].resultado_equipo_2 = parseInt(score2, 10);
           }
 
+          btn.innerText = "Calculando puntos...";
+          await recalcularYGuardarPuntos();
+
           document.getElementById("resultadoModal").style.display = "none";
           renderizarResultados();
         } catch (error) {
           console.error(error);
-          alert("Error al guardar el resultado. Revisá permisos en Supabase.");
+          alert("Error al guardar el resultado: " + error.message);
         } finally {
           btn.disabled = false;
           btn.innerText = "💾 Guardar resultado";
         }
+      }
+
+      async function recalcularYGuardarPuntos() {
+        // Trae todas las predicciones y todos los usuarios
+        const [{ data: todasPred, error: errPred }, { data: todosUsuarios, error: errU }] =
+          await Promise.all([
+            supabaseClient
+              .from("predicciones")
+              .select("usuario_id, partido_id, goles_equipo_1, goles_equipo_2"),
+            supabaseClient.from("usuarios").select("id, nombre"),
+          ]);
+
+        if (errPred || errU) throw errPred || errU;
+
+        // Acumula puntos por usuario
+        const totales = {};
+        todosUsuarios.forEach((u) => {
+          totales[u.id] = { id: u.id, nombre: u.nombre, puntos: 0 };
+        });
+
+        (todasPred || []).forEach((pred) => {
+          const partido = listaPartidos.find((p) => p.id === pred.partido_id);
+          if (!partido || !totales[pred.usuario_id]) return;
+          totales[pred.usuario_id].puntos += calcularPuntos(pred, partido);
+        });
+
+        // Persiste los totales en la columna puntos de usuarios
+        const upsertData = Object.values(totales);
+        const { error: errUpsert } = await supabaseClient
+          .from("usuarios")
+          .upsert(upsertData, { onConflict: "id" });
+
+        if (errUpsert) throw errUpsert;
       }
 
       async function cargarUsuariosSinPrediccion(partido_id) {
