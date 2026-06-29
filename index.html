@@ -27,7 +27,7 @@
 
       .container {
         width: 100%;
-        max-width: 500px;
+        max-width: 750px;
       }
 
       h1 {
@@ -36,14 +36,79 @@
         margin-bottom: 25px;
       }
 
+      .login-layout {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 20px;
+        align-items: flex-start;
+      }
+
+      .usuarios-panel {
+        flex: 0 0 200px;
+        background-color: var(--card-bg);
+        border-radius: 12px;
+        padding: 15px;
+      }
+
+      .usuarios-panel h3 {
+        font-size: 12px;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin: 0 0 8px 0;
+      }
+
+      .usuarios-panel .hint {
+        font-size: 11px;
+        color: var(--text-muted);
+        line-height: 1.5;
+        margin: 0 0 12px 0;
+      }
+
+      .lista-usuarios {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        max-height: 220px;
+        overflow-y: auto;
+      }
+
+      .usuario-item {
+        background-color: #2c3545;
+        border: none;
+        color: var(--text-color);
+        padding: 8px 12px;
+        border-radius: 8px;
+        text-align: left;
+        cursor: pointer;
+        font-size: 13px;
+        transition: background-color 0.2s, color 0.2s;
+      }
+
+      .usuario-item:hover {
+        background-color: #3a4454;
+        color: var(--accent-color);
+      }
+
       .user-section {
+        flex: 1;
         background-color: var(--card-bg);
         padding: 15px;
         border-radius: 12px;
-        margin-bottom: 20px;
         display: flex;
         flex-direction: column;
         gap: 10px;
+      }
+
+      @media (max-width: 600px) {
+        .login-layout {
+          flex-direction: column-reverse;
+        }
+        .usuarios-panel {
+          flex: none;
+          width: 100%;
+          box-sizing: border-box;
+        }
       }
 
       .btn-register {
@@ -540,17 +605,27 @@
 
       <div id="seccion-predicciones">
 
-      <div class="user-section">
-        <label for="username">Nombre del Participante:</label>
-        <input
-          type="text"
-          id="username"
-          placeholder="Ej: Tio Carlos"
-        />
-        <button class="btn-register" type="button" onclick="registrarUsuario()">
-          👤 Registrarme
-        </button>
-        <p id="user-status" class="user-status"></p>
+      <div class="login-layout">
+        <div class="usuarios-panel">
+          <h3>Participantes</h3>
+          <p class="hint">Hacé clic en tu nombre para ingresar. Si no estás en la lista, escribí tu nombre nuevo abajo.</p>
+          <div id="lista-usuarios" class="lista-usuarios">
+            <p style="color:var(--text-muted);font-size:12px;margin:0">Cargando...</p>
+          </div>
+        </div>
+
+        <div class="user-section">
+          <label for="username">Tu nombre:</label>
+          <input
+            type="text"
+            id="username"
+            placeholder="Ej: Tio Carlos"
+          />
+          <button class="btn-register" type="button" onclick="registrarUsuario()">
+            👤 Ingresar
+          </button>
+          <p id="user-status" class="user-status"></p>
+        </div>
       </div>
 
       <div id="partidos-container"></div>
@@ -980,6 +1055,32 @@
         });
       }
 
+      async function cargarListaUsuarios() {
+        const { data, error } = await supabaseClient
+          .from("usuarios")
+          .select("nombre")
+          .order("nombre", { ascending: true });
+
+        const container = document.getElementById("lista-usuarios");
+        const visibles = (data || []).filter((u) => u.nombre !== "adminmlc");
+        if (error || !visibles.length) {
+          container.innerHTML = '<p style="color:var(--text-muted);font-size:12px;margin:0">Aún no hay participantes.</p>';
+          return;
+        }
+
+        container.innerHTML = "";
+        visibles.forEach((u) => {
+          const btn = document.createElement("button");
+          btn.className = "usuario-item";
+          btn.textContent = u.nombre;
+          btn.addEventListener("click", () => {
+            document.getElementById("username").value = u.nombre;
+            registrarUsuario(true);
+          });
+          container.appendChild(btn);
+        });
+      }
+
       function mostrarEstadoUsuario(mensaje, tipo = "") {
         const el = document.getElementById("user-status");
         el.innerText = mensaje;
@@ -1013,19 +1114,43 @@
         return nuevo;
       }
 
-      async function registrarUsuario() {
-        const nombre = document.getElementById("username").value.trim();
+      function normalizarNombre(nombre) {
+        return nombre
+          .toLowerCase()
+          .split(" ")
+          .map((p) => p.charAt(0).toUpperCase() + p.slice(1))
+          .join(" ");
+      }
+
+      async function registrarUsuario(soloLogin = false) {
+        let nombre = document.getElementById("username").value.trim();
 
         if (!nombre) {
           mostrarEstadoUsuario("Escribe tu nombre para registrarte.", "error");
           return;
         }
 
+        if (!soloLogin) {
+          nombre = normalizarNombre(nombre);
+          document.getElementById("username").value = nombre;
+
+          const { data: existente } = await supabaseClient
+            .from("usuarios")
+            .select("id")
+            .eq("nombre", nombre)
+            .maybeSingle();
+
+          if (existente) {
+            mostrarEstadoUsuario("Ese nombre ya está registrado. Hacé clic en tu nombre de la lista para ingresar.", "error");
+            return;
+          }
+        }
+
         try {
           const usuario = await obtenerOCrearUsuario(nombre);
           guardarUsuarioLocal(usuario);
           await cargarPrediccionesUsuario(usuario.id);
-          await cargarPartidos();
+          await Promise.all([cargarPartidos(), cargarListaUsuarios()]);
           alert(`¡Listo! Ya puedes hacer predicciones como ${usuario.nombre}.`);
         } catch (error) {
           console.error(error);
@@ -1377,7 +1502,7 @@
           await cargarPrediccionesUsuario(idGuardado);
         }
 
-        await cargarPartidos();
+        await Promise.all([cargarPartidos(), cargarListaUsuarios()]);
         setInterval(actualizarEstadoBotonesPartidos, 30000);
       });
     </script>
