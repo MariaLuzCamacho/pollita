@@ -1142,11 +1142,11 @@
             : `<span class="status-pendiente">PENDIENTE</span>`;
 
           const btnVerDetalle = tieneResultado
-            ? `<button class="btn-ver-detalle" onclick="abrirModalDetalle(${partido.id})">🔍 Ver detalle</button>`
+            ? `<button class="btn-ver-detalle" onclick="abrirModalDetalle('${partido.id}')">🔍 Ver detalle</button>`
             : "";
 
           const btnCargarResultado = esAdmin
-            ? `<button class="btn-cargar-resultado" onclick="abrirModalCargarResultado(${partido.id})">⚽ ${tieneResultado ? "Editar resultado" : "Cargar resultado"}</button>`
+            ? `<button class="btn-cargar-resultado" onclick="abrirModalCargarResultado('${partido.id}')">⚽ ${tieneResultado ? "Editar resultado" : "Cargar resultado"}</button>`
             : "";
 
           const card = document.createElement("div");
@@ -1256,7 +1256,7 @@
           : "";
 
         const btnAdminPred = (!abierto && usuarioActual?.nombre === "adminmlc")
-          ? `<button class="btn-admin-pred" onclick="abrirModalAdminPred(${partido.id})">👤 Agregar predicción</button>`
+          ? `<button class="btn-admin-pred" onclick="abrirModalAdminPred('${partido.id}')">👤 Agregar predicción</button>`
           : "";
 
         const card = document.createElement("div");
