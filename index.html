@@ -905,6 +905,7 @@
               <button class="pred-toggle-btn pred-toggle-activo" id="toggle-partido" onclick="mostrarPrediccionesGlobal('partido')">Partido</button>
               <button class="pred-toggle-btn" id="toggle-usuario" onclick="mostrarPrediccionesGlobal('usuario')">Usuario</button>
             </div>
+            <div id="pred-filtro" style="margin-bottom:15px"></div>
             <div id="pred-contenido"></div>
           `;
           mostrarPrediccionesGlobal("partido");
@@ -912,31 +913,34 @@
       }
 
       async function cargarTodasLasPredicciones() {
-        const idsIniciados = listaPartidos
-          .filter((p) => !partidoAbiertoParaPrediccion(p))
-          .map((p) => p.id);
+        const todosIds = listaPartidos.map((p) => p.id);
 
-        const { data: preds, error: errPreds } = idsIniciados.length
-          ? await supabaseClient
-              .from("predicciones")
-              .select("partido_id, goles_equipo_1, goles_equipo_2, usuarios(nombre)")
-              .in("partido_id", idsIniciados)
-          : { data: [], error: null };
+        const [predResult, usuariosResult] = await Promise.all([
+          todosIds.length
+            ? supabaseClient
+                .from("predicciones")
+                .select("partido_id, goles_equipo_1, goles_equipo_2, usuarios(nombre)")
+                .in("partido_id", todosIds)
+            : Promise.resolve({ data: [], error: null }),
+          supabaseClient
+            .from("usuarios")
+            .select("nombre")
+            .order("nombre", { ascending: true }),
+        ]);
 
-        if (errPreds) throw errPreds;
+        if (predResult.error) throw predResult.error;
+        if (usuariosResult.error) throw usuariosResult.error;
 
-        prediccionesGlobales = (preds || []).map((d) => ({
+        prediccionesGlobales = (predResult.data || []).map((d) => ({
           partido_id: d.partido_id,
           usuario_nombre: d.usuarios.nombre,
           goles_equipo_1: d.goles_equipo_1,
           goles_equipo_2: d.goles_equipo_2,
         }));
 
-        todosLosUsuarios = [...new Set(
-          (preds || [])
-            .filter((d) => d.usuarios.nombre !== "adminmlc")
-            .map((d) => d.usuarios.nombre),
-        )].sort();
+        todosLosUsuarios = (usuariosResult.data || [])
+          .filter((u) => u.nombre !== "adminmlc")
+          .map((u) => u.nombre);
       }
 
       async function mostrarPrediccionesGlobal(agrupacion) {
@@ -956,16 +960,53 @@
           return;
         }
 
-        const partidosIniciados = listaPartidos.filter((p) => !partidoAbiertoParaPrediccion(p));
+        renderizarFiltroPred(agrupacion);
+        renderizarContenidoPred(agrupacion, "");
+      }
 
-        if (!partidosIniciados.length) {
-          contenido.innerHTML = '<p class="estado-vacio">Aún no ha comenzado ningún partido.</p>';
-          return;
-        }
+      function renderizarFiltroPred(agrupacion) {
+        const filtroContainer = document.getElementById("pred-filtro");
+        if (!filtroContainer) return;
 
         if (agrupacion === "partido") {
+          const options = listaPartidos.map((p) => {
+            const { fecha } = formatearFechaPartido(p.fecha, p.hora);
+            return `<option value="${p.id}">${p.equipo_1} vs ${p.equipo_2} — ${fecha}</option>`;
+          }).join("");
+          filtroContainer.innerHTML = `
+            <select class="admin-pred-select" id="filtro-select"
+              onchange="renderizarContenidoPred('partido', this.value)">
+              <option value="">Todos los partidos</option>
+              ${options}
+            </select>`;
+        } else {
+          const options = todosLosUsuarios.map((nombre) =>
+            `<option value="${nombre}">${nombre}</option>`
+          ).join("");
+          filtroContainer.innerHTML = `
+            <select class="admin-pred-select" id="filtro-select"
+              onchange="renderizarContenidoPred('usuario', this.value)">
+              <option value="">Todos los usuarios</option>
+              ${options}
+            </select>`;
+        }
+      }
+
+      function renderizarContenidoPred(agrupacion, filtro) {
+        const contenido = document.getElementById("pred-contenido");
+
+        if (agrupacion === "partido") {
+          const partidos = filtro
+            ? listaPartidos.filter((p) => p.id === filtro)
+            : listaPartidos;
+
+          if (!partidos.length) {
+            contenido.innerHTML = '<p class="estado-vacio">No hay partidos registrados.</p>';
+            return;
+          }
+
           let html = "";
-          partidosIniciados.forEach((partido) => {
+          partidos.forEach((partido) => {
             const { fecha } = formatearFechaPartido(partido.fecha, partido.hora);
             const preds = prediccionesGlobales.filter((p) => p.partido_id === partido.id);
             const filas = todosLosUsuarios
@@ -993,14 +1034,19 @@
           contenido.innerHTML = html;
 
         } else {
-          if (!todosLosUsuarios.length) {
+          const usuarios = filtro
+            ? todosLosUsuarios.filter((n) => n === filtro)
+            : todosLosUsuarios;
+
+          if (!usuarios.length) {
             contenido.innerHTML = '<p class="estado-vacio">No hay participantes registrados.</p>';
             return;
           }
+
           let html = "";
-          todosLosUsuarios.forEach((nombre) => {
+          usuarios.forEach((nombre) => {
             const preds = prediccionesGlobales.filter((p) => p.usuario_nombre === nombre);
-            const filas = partidosIniciados
+            const filas = listaPartidos
               .map((partido) => {
                 const { fecha } = formatearFechaPartido(partido.fecha, partido.hora);
                 const pred = preds.find((p) => p.partido_id === partido.id);
