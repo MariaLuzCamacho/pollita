@@ -1455,7 +1455,7 @@
       async function obtenerOCrearUsuario(nombre) {
         const { data: existente, error: selectError } = await supabaseClient
           .from("usuarios")
-          .select("id, nombre")
+          .select("id, nombre, avatar_url")
           .eq("nombre", nombre)
           .maybeSingle();
 
@@ -1465,7 +1465,7 @@
         const { data: nuevo, error: insertError } = await supabaseClient
           .from("usuarios")
           .insert([{ nombre }])
-          .select("id, nombre")
+          .select("id, nombre, avatar_url")
           .single();
 
         if (insertError) throw insertError;
@@ -2010,13 +2010,12 @@
         bar.style.display = "flex";
         document.getElementById("user-bar-nombre").textContent = usuarioActual.nombre;
 
-        const avatarKey = `pollita_avatar_${usuarioActual.id}`;
-        const avatarData = localStorage.getItem(avatarKey);
         const avatarImg = document.getElementById("user-bar-avatar");
         const avatarPlaceholder = document.getElementById("user-bar-avatar-placeholder");
+        const avatarUrl = usuarioActual.avatar_url;
 
-        if (avatarData) {
-          avatarImg.src = avatarData;
+        if (avatarUrl) {
+          avatarImg.src = avatarUrl;
           avatarImg.style.display = "block";
           avatarPlaceholder.style.display = "none";
         } else {
@@ -2028,25 +2027,53 @@
       function cambiarAvatar(event) {
         const file = event.target.files[0];
         if (!file || !usuarioActual) return;
+        event.target.value = "";
 
         const reader = new FileReader();
-        reader.onload = function (e) {
+        reader.onload = async function (e) {
           const img = new Image();
-          img.onload = function () {
+          img.onload = async function () {
             const canvas = document.createElement("canvas");
             const MAX = 200;
             const scale = Math.min(1, MAX / Math.max(img.width, img.height));
             canvas.width = Math.round(img.width * scale);
             canvas.height = Math.round(img.height * scale);
             canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
-            const dataUrl = canvas.toDataURL("image/jpeg", 0.8);
-            localStorage.setItem(`pollita_avatar_${usuarioActual.id}`, dataUrl);
-            actualizarUserBar();
+
+            canvas.toBlob(async (blob) => {
+              const filePath = `${usuarioActual.id}.jpg`;
+              const { error: uploadError } = await supabaseClient.storage
+                .from("avatars")
+                .upload(filePath, blob, { upsert: true, contentType: "image/jpeg" });
+
+              if (uploadError) {
+                alert("Error al subir la imagen: " + uploadError.message);
+                return;
+              }
+
+              const { data: urlData } = supabaseClient.storage
+                .from("avatars")
+                .getPublicUrl(filePath);
+
+              const publicUrl = urlData.publicUrl + "?t=" + Date.now();
+
+              const { error: updateError } = await supabaseClient
+                .from("usuarios")
+                .update({ avatar_url: publicUrl })
+                .eq("id", usuarioActual.id);
+
+              if (updateError) {
+                alert("Error al guardar la URL: " + updateError.message);
+                return;
+              }
+
+              usuarioActual.avatar_url = publicUrl;
+              actualizarUserBar();
+            }, "image/jpeg", 0.8);
           };
           img.src = e.target.result;
         };
         reader.readAsDataURL(file);
-        event.target.value = "";
       }
 
       function cerrarSesion() {
@@ -2068,7 +2095,12 @@
 
         if (nombreGuardado && idGuardado) {
           document.getElementById("username").value = nombreGuardado;
-          usuarioActual = { id: idGuardado, nombre: nombreGuardado };
+          const { data: usuarioGuardado } = await supabaseClient
+            .from("usuarios")
+            .select("id, nombre, avatar_url")
+            .eq("id", idGuardado)
+            .maybeSingle();
+          usuarioActual = usuarioGuardado || { id: idGuardado, nombre: nombreGuardado };
           mostrarEstadoUsuario(`Registrado como ${nombreGuardado}`, "ok");
           actualizarUserBar();
           await cargarPrediccionesUsuario(idGuardado);
