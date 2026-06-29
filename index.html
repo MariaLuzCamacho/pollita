@@ -765,6 +765,16 @@
     <div class="container">
       <h1>🏆 MUNDIAL 2026 - PREDICCIONES</h1>
 
+      <div class="user-bar" id="user-bar">
+        <div id="user-bar-avatar-wrapper" onclick="document.getElementById('avatar-input').click()" title="Cambiar foto de perfil" style="display:flex;align-items:center">
+          <img class="user-bar-avatar" id="user-bar-avatar" src="" alt="Avatar" style="display:none" />
+          <div class="user-bar-avatar-placeholder" id="user-bar-avatar-placeholder">👤</div>
+        </div>
+        <input type="file" id="avatar-input" accept="image/*" style="display:none" onchange="cambiarAvatar(event)" />
+        <span class="user-bar-nombre" id="user-bar-nombre"></span>
+        <button class="btn-salir" onclick="cerrarSesion()">Salir</button>
+      </div>
+
       <div class="tabs-header">
         <button class="tab-btn tab-activo" id="tab-predicciones" onclick="cambiarTab('predicciones')">Predicciones</button>
         <button class="tab-btn" id="tab-dashboard" onclick="cambiarTab('dashboard')">Dashboard</button>
@@ -1439,6 +1449,7 @@
         localStorage.setItem("pollita_usuario_id", usuario.id);
         localStorage.setItem("pollita_usuario_nombre", usuario.nombre);
         mostrarEstadoUsuario(`Registrado como ${usuario.nombre}`, "ok");
+        actualizarUserBar();
       }
 
       async function obtenerOCrearUsuario(nombre) {
@@ -1990,6 +2001,67 @@
         }
       }
 
+      function actualizarUserBar() {
+        const bar = document.getElementById("user-bar");
+        if (!usuarioActual) {
+          bar.style.display = "none";
+          return;
+        }
+        bar.style.display = "flex";
+        document.getElementById("user-bar-nombre").textContent = usuarioActual.nombre;
+
+        const avatarKey = `pollita_avatar_${usuarioActual.id}`;
+        const avatarData = localStorage.getItem(avatarKey);
+        const avatarImg = document.getElementById("user-bar-avatar");
+        const avatarPlaceholder = document.getElementById("user-bar-avatar-placeholder");
+
+        if (avatarData) {
+          avatarImg.src = avatarData;
+          avatarImg.style.display = "block";
+          avatarPlaceholder.style.display = "none";
+        } else {
+          avatarImg.style.display = "none";
+          avatarPlaceholder.style.display = "flex";
+        }
+      }
+
+      function cambiarAvatar(event) {
+        const file = event.target.files[0];
+        if (!file || !usuarioActual) return;
+
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          const img = new Image();
+          img.onload = function () {
+            const canvas = document.createElement("canvas");
+            const MAX = 200;
+            const scale = Math.min(1, MAX / Math.max(img.width, img.height));
+            canvas.width = Math.round(img.width * scale);
+            canvas.height = Math.round(img.height * scale);
+            canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+            const dataUrl = canvas.toDataURL("image/jpeg", 0.8);
+            localStorage.setItem(`pollita_avatar_${usuarioActual.id}`, dataUrl);
+            actualizarUserBar();
+          };
+          img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+        event.target.value = "";
+      }
+
+      function cerrarSesion() {
+        localStorage.removeItem("pollita_usuario_id");
+        localStorage.removeItem("pollita_usuario_nombre");
+        usuarioActual = null;
+        prediccionesUsuario = {};
+        document.getElementById("username").value = "";
+        const statusEl = document.getElementById("user-status");
+        statusEl.innerText = "";
+        statusEl.className = "user-status";
+        actualizarUserBar();
+        cargarPartidos();
+      }
+
       document.addEventListener("DOMContentLoaded", async () => {
         const nombreGuardado = localStorage.getItem("pollita_usuario_nombre");
         const idGuardado = localStorage.getItem("pollita_usuario_id");
@@ -1998,6 +2070,7 @@
           document.getElementById("username").value = nombreGuardado;
           usuarioActual = { id: idGuardado, nombre: nombreGuardado };
           mostrarEstadoUsuario(`Registrado como ${nombreGuardado}`, "ok");
+          actualizarUserBar();
           await cargarPrediccionesUsuario(idGuardado);
         }
 
