@@ -665,6 +665,41 @@
       .tabla-pred-global tr:last-child td {
         border-bottom: none;
       }
+
+      .btn-admin-pred {
+        background-color: transparent;
+        color: #9b59b6;
+        border: 1px solid #9b59b6;
+        width: 100%;
+        padding: 10px;
+        border-radius: 25px;
+        font-weight: bold;
+        font-size: 14px;
+        cursor: pointer;
+        margin-top: 6px;
+      }
+
+      .btn-admin-pred:hover {
+        background-color: #9b59b6;
+        color: #fff;
+      }
+
+      .admin-pred-form {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+
+      .admin-pred-select {
+        background-color: #121824;
+        border: 1px solid #313d4f;
+        color: white;
+        padding: 12px;
+        border-radius: 8px;
+        font-size: 15px;
+        width: 100%;
+        box-sizing: border-box;
+      }
     </style>
   </head>
   <body>
@@ -789,6 +824,22 @@
         <div id="detalle-tabla-container" style="overflow-y:auto;max-height:280px"></div>
 
         <button class="btn-cerrar" onclick="document.getElementById('detalleModal').style.display='none'">
+          Cerrar
+        </button>
+      </div>
+    </div>
+
+    <div id="adminPredModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header-info">
+          <span class="badge-fase" id="admin-pred-fase">R32</span>
+          <span style="font-size:13px;color:var(--text-muted)">Agregar predicción</span>
+        </div>
+        <div style="text-align:center;margin-bottom:12px">
+          <strong id="admin-pred-equipos" style="font-size:16px"></strong>
+        </div>
+        <div id="admin-pred-form-container"></div>
+        <button class="btn-cerrar" onclick="document.getElementById('adminPredModal').style.display='none'">
           Cerrar
         </button>
       </div>
@@ -1147,6 +1198,7 @@
       let usuarioActual = null;
       let prediccionesUsuario = {};
       let partidoParaResultadoId = null;
+      let adminPredPartidoId = null;
       let prediccionesGlobales = [];
       let todosLosUsuarios = [];
 
@@ -1203,6 +1255,10 @@
           ? `<p class="prediccion-guardada">Tu predicción: ${prediccion.goles_equipo_1} - ${prediccion.goles_equipo_2}</p>`
           : "";
 
+        const btnAdminPred = (!abierto && usuarioActual?.nombre === "adminmlc")
+          ? `<button class="btn-admin-pred" onclick="abrirModalAdminPred(${partido.id})">👤 Agregar predicción</button>`
+          : "";
+
         const card = document.createElement("div");
         card.className = "match-card";
         card.dataset.index = index;
@@ -1230,6 +1286,7 @@
               <button class="btn-predict" data-index="${index}" ${abierto ? "" : "disabled"}>
                   ${textoBotonPrediccion(partido)}
               </button>
+              ${btnAdminPred}
           `;
 
         const boton = card.querySelector(".btn-predict");
@@ -1337,7 +1394,10 @@
           return;
         }
 
-        if (!soloLogin) {
+        const esAdmin = nombre.toLowerCase() === "adminmlc";
+        if (esAdmin) nombre = "adminmlc";
+
+        if (!soloLogin && !esAdmin) {
           nombre = normalizarNombre(nombre);
           document.getElementById("username").value = nombre;
 
@@ -1492,6 +1552,8 @@
         if (event.target == resModal) resModal.style.display = "none";
         const detModal = document.getElementById("detalleModal");
         if (event.target == detModal) detModal.style.display = "none";
+        const adminModal = document.getElementById("adminPredModal");
+        if (event.target == adminModal) adminModal.style.display = "none";
       };
 
       function calcularPuntos(prediccion, partido) {
@@ -1629,6 +1691,116 @@
         } finally {
           btn.disabled = false;
           btn.innerText = "💾 Guardar resultado";
+        }
+      }
+
+      async function cargarUsuariosSinPrediccion(partido_id) {
+        const [{ data: usuarios, error: errU }, { data: preds, error: errP }] = await Promise.all([
+          supabaseClient.from("usuarios").select("id, nombre").order("nombre", { ascending: true }),
+          supabaseClient.from("predicciones").select("usuario_id").eq("partido_id", partido_id),
+        ]);
+        if (errU) throw errU;
+        if (errP) throw errP;
+        const conPrediccion = new Set((preds || []).map((p) => p.usuario_id));
+        return (usuarios || []).filter((u) => !conPrediccion.has(u.id));
+      }
+
+      function renderizarFormAdminPred(usuarios) {
+        const container = document.getElementById("admin-pred-form-container");
+        if (!usuarios.length) {
+          container.innerHTML = '<p class="estado-vacio">Todos los usuarios ya tienen predicción para este partido.</p>';
+          return;
+        }
+        const options = usuarios.map((u) => `<option value="${u.id}">${u.nombre}</option>`).join("");
+        container.innerHTML = `
+          <div class="admin-pred-form">
+            <select id="admin-pred-usuario" class="admin-pred-select">${options}</select>
+            <div class="prediction-row" style="margin:0">
+              <div class="score-block" style="margin:0 auto">
+                <input type="number" id="admin-pred-score1" class="input-score" placeholder="?" min="0" step="1" />
+                <span class="modal-vs">VS</span>
+                <input type="number" id="admin-pred-score2" class="input-score" placeholder="?" min="0" step="1" />
+              </div>
+            </div>
+            <button class="btn-save" id="btn-guardar-pred-admin" onclick="guardarPrediccionAdmin()">💾 Guardar predicción</button>
+          </div>`;
+      }
+
+      async function abrirModalAdminPred(partidoId) {
+        const partido = listaPartidos.find((p) => p.id === partidoId);
+        if (!partido) return;
+        adminPredPartidoId = partidoId;
+        document.getElementById("admin-pred-fase").innerText = partido.fase || "R32";
+        document.getElementById("admin-pred-equipos").innerText = `${partido.equipo_1} vs ${partido.equipo_2}`;
+        const container = document.getElementById("admin-pred-form-container");
+        container.innerHTML = '<p class="estado-vacio">Cargando usuarios...</p>';
+        document.getElementById("adminPredModal").style.display = "flex";
+        try {
+          const sinPrediccion = await cargarUsuariosSinPrediccion(partidoId);
+          renderizarFormAdminPred(sinPrediccion);
+        } catch (e) {
+          console.error(e);
+          container.innerHTML = '<p class="estado-vacio" style="color:#e74c3c">Error al cargar usuarios.</p>';
+        }
+      }
+
+      async function guardarPrediccionAdmin() {
+        const select = document.getElementById("admin-pred-usuario");
+        const score1 = document.getElementById("admin-pred-score1").value;
+        const score2 = document.getElementById("admin-pred-score2").value;
+        if (!select || !select.value) { alert("Seleccioná un usuario."); return; }
+        if (score1 === "" || score2 === "") { alert("Ingresá ambos marcadores."); return; }
+        if (parseInt(score1, 10) < 0 || parseInt(score2, 10) < 0) { alert("Los goles no pueden ser negativos."); return; }
+
+        const usuarioId = select.value;
+        const usuarioNombre = select.options[select.selectedIndex].text;
+        const btn = document.getElementById("btn-guardar-pred-admin");
+        btn.disabled = true;
+        btn.innerText = "Guardando...";
+
+        try {
+          const { error } = await supabaseClient.from("predicciones").upsert(
+            {
+              usuario_id: usuarioId,
+              partido_id: adminPredPartidoId,
+              goles_equipo_1: parseInt(score1, 10),
+              goles_equipo_2: parseInt(score2, 10),
+            },
+            { onConflict: "usuario_id,partido_id" },
+          );
+          if (error) throw error;
+
+          if (usuarioActual?.id === usuarioId) {
+            prediccionesUsuario[adminPredPartidoId] = {
+              partido_id: adminPredPartidoId,
+              goles_equipo_1: parseInt(score1, 10),
+              goles_equipo_2: parseInt(score2, 10),
+            };
+            const idx = listaPartidos.findIndex((p) => p.id === adminPredPartidoId);
+            if (idx !== -1) {
+              const oldCard = document.querySelector(`.match-card[data-index="${idx}"]`);
+              if (oldCard) oldCard.replaceWith(renderizarTarjetaPartido(listaPartidos[idx], idx));
+            }
+          }
+
+          select.querySelector(`option[value="${usuarioId}"]`)?.remove();
+          document.getElementById("admin-pred-score1").value = "";
+          document.getElementById("admin-pred-score2").value = "";
+
+          if (select.options.length === 0) {
+            document.getElementById("admin-pred-form-container").innerHTML =
+              '<p class="estado-vacio">Todos los usuarios ya tienen predicción para este partido.</p>';
+          } else {
+            btn.disabled = false;
+            btn.innerText = "💾 Guardar predicción";
+          }
+
+          alert(`Predicción de ${usuarioNombre} guardada.`);
+        } catch (e) {
+          console.error(e);
+          alert("Error al guardar la predicción.");
+          btn.disabled = false;
+          btn.innerText = "💾 Guardar predicción";
         }
       }
 
