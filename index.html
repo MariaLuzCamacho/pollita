@@ -222,6 +222,8 @@
         border-radius: 20px;
         width: 90%;
         max-width: 420px;
+        max-height: 90vh;
+        overflow-y: auto;
         box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
       }
 
@@ -287,11 +289,15 @@
         border-radius: 8px;
       }
 
-      /* Quitar flechas del input number */
+      /* Quitar flechas del input number (Chrome/Safari y Firefox) */
       .input-score::-webkit-inner-spin-button,
       .input-score::-webkit-outer-spin-button {
         -webkit-appearance: none;
         margin: 0;
+      }
+
+      .input-score[type="number"] {
+        -moz-appearance: textfield;
       }
 
       .modal-vs {
@@ -312,11 +318,227 @@
         width: 100%;
         margin-top: 10px;
       }
+
+      /* Tabla de Ranking */
+      .tabla-ranking {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 15px;
+      }
+
+      .tabla-ranking th {
+        color: var(--text-muted);
+        font-size: 12px;
+        text-align: left;
+        padding: 8px;
+        border-bottom: 1px solid #2c3545;
+        text-transform: uppercase;
+      }
+
+      .tabla-ranking td {
+        padding: 10px 8px;
+        border-bottom: 1px solid #2c3545;
+      }
+
+      .tabla-ranking tr.fila-yo td {
+        color: var(--accent-color);
+        font-weight: bold;
+      }
+
+      .posicion-medal {
+        font-size: 18px;
+      }
+
+      /* Tabla del modal "Ver detalle" */
+      .tabla-detalle {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
+      }
+
+      .tabla-detalle th {
+        color: var(--text-muted);
+        font-size: 12px;
+        text-align: left;
+        padding: 6px 8px;
+        border-bottom: 1px solid #2c3545;
+        text-transform: uppercase;
+      }
+
+      .tabla-detalle td {
+        padding: 8px;
+        border-bottom: 1px solid #2c3545;
+      }
+
+      .detalle-match-info {
+        text-align: center;
+        margin-bottom: 15px;
+      }
+
+      .detalle-match-info .score-final {
+        font-size: 22px;
+        display: block;
+        margin-top: 4px;
+      }
+
+      .btn-cerrar {
+        background-color: #2c3545;
+        color: var(--text-muted);
+        border: none;
+        padding: 12px;
+        border-radius: 25px;
+        font-weight: bold;
+        font-size: 14px;
+        cursor: pointer;
+        width: 100%;
+        margin-top: 15px;
+      }
+
+      /* Estado pendiente en tarjetas de resultado (solo admin) */
+      .status-pendiente {
+        color: #e67e22;
+        font-size: 12px;
+        text-transform: uppercase;
+        font-weight: bold;
+      }
+
+      .btn-cargar-resultado {
+        background-color: transparent;
+        color: #e67e22;
+        border: 1px solid #e67e22;
+        width: 100%;
+        padding: 10px;
+        border-radius: 25px;
+        font-weight: bold;
+        font-size: 14px;
+        cursor: pointer;
+        margin-top: 6px;
+      }
+
+      .btn-cargar-resultado:hover {
+        background-color: #e67e22;
+        color: #fff;
+      }
+
+      /* Etiqueta FINAL y marcador en tarjetas de resultado */
+      .badge-final {
+        background-color: #27ae60;
+        color: #fff;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: bold;
+        letter-spacing: 1px;
+      }
+
+      .score-final {
+        font-size: 28px;
+        font-weight: bold;
+        color: var(--accent-color);
+        letter-spacing: 4px;
+      }
+
+      .btn-ver-detalle {
+        background-color: transparent;
+        color: #3498db;
+        border: 1px solid #3498db;
+        width: 100%;
+        padding: 10px;
+        border-radius: 25px;
+        font-weight: bold;
+        font-size: 14px;
+        cursor: pointer;
+        margin-top: 4px;
+      }
+
+      .btn-ver-detalle:hover {
+        background-color: #3498db;
+        color: #fff;
+      }
+
+      /* Sub-tabs del dashboard */
+      .subtabs-header {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 20px;
+        background-color: var(--card-bg);
+        padding: 6px;
+        border-radius: 25px;
+      }
+
+      .subtab-btn {
+        flex: 1;
+        padding: 10px;
+        border: none;
+        border-radius: 20px;
+        font-weight: bold;
+        font-size: 14px;
+        cursor: pointer;
+        background-color: transparent;
+        color: var(--text-muted);
+        transition: background-color 0.2s, color 0.2s;
+      }
+
+      .subtab-btn.subtab-activo {
+        background-color: #3498db;
+        color: #fff;
+      }
+
+      /* Estado vacío genérico */
+      .estado-vacio {
+        color: var(--text-muted);
+        text-align: center;
+        margin-top: 20px;
+        font-size: 14px;
+      }
+
+      /* Card contenedor de la tabla de ranking */
+      .ranking-card {
+        background-color: var(--card-bg);
+        border-radius: 16px;
+        padding: 20px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+      }
+
+      /* Tabs principales */
+      .tabs-header {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 20px;
+        background-color: var(--card-bg);
+        padding: 6px;
+        border-radius: 25px;
+      }
+
+      .tab-btn {
+        flex: 1;
+        padding: 10px;
+        border: none;
+        border-radius: 20px;
+        font-weight: bold;
+        font-size: 14px;
+        cursor: pointer;
+        background-color: transparent;
+        color: var(--text-muted);
+        transition: background-color 0.2s, color 0.2s;
+      }
+
+      .tab-btn.tab-activo {
+        background-color: var(--accent-color);
+        color: #000;
+      }
     </style>
   </head>
   <body>
     <div class="container">
       <h1>🏆 MUNDIAL 2026 - PREDICCIONES</h1>
+
+      <div class="tabs-header">
+        <button class="tab-btn tab-activo" id="tab-predicciones" onclick="cambiarTab('predicciones')">Predicciones</button>
+        <button class="tab-btn" id="tab-dashboard" onclick="cambiarTab('dashboard')">Dashboard</button>
+      </div>
+
+      <div id="seccion-predicciones">
 
       <div class="user-section">
         <label for="username">Nombre del Participante:</label>
@@ -332,6 +554,23 @@
       </div>
 
       <div id="partidos-container"></div>
+
+      </div><!-- /seccion-predicciones -->
+
+      <div id="seccion-dashboard" style="display:none">
+        <div class="subtabs-header">
+          <button class="subtab-btn subtab-activo" id="subtab-resultados" onclick="cambiarSubtab('resultados')">Resultados</button>
+          <button class="subtab-btn" id="subtab-ranking" onclick="cambiarSubtab('ranking')">Ranking</button>
+        </div>
+
+        <div id="seccion-resultados">
+          <!-- se construye en el paso 4 -->
+        </div>
+
+        <div id="seccion-ranking" style="display:none">
+          <!-- se construye en el paso 7 -->
+        </div>
+      </div>
     </div>
 
     <div id="predictionModal" class="modal">
@@ -384,7 +623,234 @@
       </div>
     </div>
 
+    <div id="detalleModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header-info">
+          <span class="badge-fase" id="detalle-fase">R32</span>
+          <span class="badge-final" id="detalle-resultado"></span>
+        </div>
+
+        <div class="detalle-match-info">
+          <span id="detalle-equipos" style="font-weight:bold;font-size:16px"></span>
+        </div>
+
+        <div id="detalle-tabla-container" style="overflow-y:auto;max-height:280px"></div>
+
+        <button class="btn-cerrar" onclick="document.getElementById('detalleModal').style.display='none'">
+          Cerrar
+        </button>
+      </div>
+    </div>
+
+    <div id="resultadoModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header-info">
+          <span class="badge-fase">Cargar resultado</span>
+        </div>
+
+        <div class="prediction-row">
+          <div class="modal-team">
+            <span id="resultado-nombre-1" class="name">---</span>
+          </div>
+
+          <div class="score-block">
+            <input
+              type="number"
+              id="resultado-score1"
+              class="input-score"
+              placeholder="?"
+              min="0"
+            />
+            <span class="modal-vs">-</span>
+            <input
+              type="number"
+              id="resultado-score2"
+              class="input-score"
+              placeholder="?"
+              min="0"
+            />
+          </div>
+
+          <div class="modal-team">
+            <span id="resultado-nombre-2" class="name">---</span>
+          </div>
+        </div>
+
+        <button class="btn-save" id="btn-guardar-resultado" onclick="guardarResultado()">
+          💾 Guardar resultado
+        </button>
+      </div>
+    </div>
+
     <script>
+      function cambiarSubtab(subtab) {
+        document.getElementById("seccion-resultados").style.display =
+          subtab === "resultados" ? "block" : "none";
+        document.getElementById("seccion-ranking").style.display =
+          subtab === "ranking" ? "block" : "none";
+        document.getElementById("subtab-resultados").classList.toggle("subtab-activo", subtab === "resultados");
+        document.getElementById("subtab-ranking").classList.toggle("subtab-activo", subtab === "ranking");
+        if (subtab === "resultados") renderizarResultados();
+        if (subtab === "ranking") renderizarRanking();
+      }
+
+      async function renderizarRanking() {
+        const container = document.getElementById("seccion-ranking");
+        const partidosConResultado = listaPartidos.filter(
+          (p) => p.resultado_equipo_1 !== null && p.resultado_equipo_2 !== null,
+        );
+
+        if (!partidosConResultado.length) {
+          container.innerHTML =
+            '<p class="estado-vacio">No hay resultados cargados aún.</p>';
+          return;
+        }
+
+        container.innerHTML =
+          '<p class="estado-vacio">Calculando ranking...</p>';
+
+        const idsConResultado = partidosConResultado.map((p) => p.id);
+
+        const [{ data: todosUsuarios, error: errUsuarios }, { data: predicciones, error: errPred }] =
+          await Promise.all([
+            supabaseClient.from("usuarios").select("id, nombre"),
+            supabaseClient
+              .from("predicciones")
+              .select("usuario_id, partido_id, goles_equipo_1, goles_equipo_2")
+              .in("partido_id", idsConResultado),
+          ]);
+
+        if (errUsuarios || errPred) {
+          console.error(errUsuarios || errPred);
+          container.innerHTML =
+            '<p class="estado-vacio" style="color:#e74c3c">Error al cargar el ranking.</p>';
+          return;
+        }
+
+        const puntajes = {};
+        todosUsuarios.forEach((u) => {
+          puntajes[u.id] = { nombre: u.nombre, puntos: 0 };
+        });
+
+        predicciones.forEach((pred) => {
+          const partido = listaPartidos.find((p) => p.id === pred.partido_id);
+          if (!partido || !puntajes[pred.usuario_id]) return;
+          puntajes[pred.usuario_id].puntos += calcularPuntos(pred, partido);
+        });
+
+        const ranking = Object.values(puntajes).sort((a, b) => b.puntos - a.puntos);
+
+        const medallas = ["🥇", "🥈", "🥉"];
+        const filas = ranking
+          .map((entry, i) => {
+            const pos = medallas[i] ?? `<span style="color:var(--text-muted)">${i + 1}</span>`;
+            const esYo = usuarioActual?.nombre === entry.nombre;
+            return `
+              <tr class="${esYo ? "fila-yo" : ""}">
+                <td class="posicion-medal" style="text-align:center">${pos}</td>
+                <td>${entry.nombre}</td>
+                <td style="text-align:center;font-weight:bold">${entry.puntos}</td>
+              </tr>`;
+          })
+          .join("");
+
+        container.innerHTML = `
+          <div class="ranking-card">
+            <table class="tabla-ranking">
+              <thead>
+                <tr>
+                  <th style="text-align:center">#</th>
+                  <th>Usuario</th>
+                  <th style="text-align:center">Puntos</th>
+                </tr>
+              </thead>
+              <tbody>${filas}</tbody>
+            </table>
+          </div>`;
+      }
+
+      function renderizarResultados() {
+        const container = document.getElementById("seccion-resultados");
+        const esAdmin = usuarioActual?.nombre === "adminmlc";
+
+        const partidos = esAdmin
+          ? listaPartidos
+          : listaPartidos.filter(
+              (p) => p.resultado_equipo_1 !== null && p.resultado_equipo_2 !== null,
+            );
+
+        if (!partidos.length) {
+          container.innerHTML =
+            '<p class="estado-vacio">No hay resultados cargados aún.</p>';
+          return;
+        }
+
+        container.innerHTML = "";
+        partidos.forEach((partido) => {
+          const { fecha } = formatearFechaPartido(partido.fecha, partido.hora);
+          const tieneResultado =
+            partido.resultado_equipo_1 !== null && partido.resultado_equipo_2 !== null;
+          const bandera1 = partido.bandera_1
+            ? `<img class="flag" src="${partido.bandera_1}" alt="">`
+            : "";
+          const bandera2 = partido.bandera_2
+            ? `<img class="flag" src="${partido.bandera_2}" alt="">`
+            : "";
+
+          const marcador = tieneResultado
+            ? `<div class="score-final">${partido.resultado_equipo_1} - ${partido.resultado_equipo_2}</div>`
+            : `<div class="vs-divider">VS</div>`;
+
+          const badgeEstado = tieneResultado
+            ? `<span class="badge-final">FINAL</span>`
+            : `<span class="status-pendiente">PENDIENTE</span>`;
+
+          const btnVerDetalle = tieneResultado
+            ? `<button class="btn-ver-detalle" onclick="abrirModalDetalle(${partido.id})">🔍 Ver detalle</button>`
+            : "";
+
+          const btnCargarResultado = esAdmin
+            ? `<button class="btn-cargar-resultado" onclick="abrirModalCargarResultado(${partido.id})">⚽ ${tieneResultado ? "Editar resultado" : "Cargar resultado"}</button>`
+            : "";
+
+          const card = document.createElement("div");
+          card.className = "match-card";
+          card.innerHTML = `
+            <div class="match-header">
+              <span class="badge-fase">${partido.fase || "R32"}</span>
+              ${badgeEstado}
+            </div>
+            <div class="match-teams">
+              <div class="team">
+                ${bandera1}
+                <span class="team-name">${partido.equipo_1}</span>
+              </div>
+              ${marcador}
+              <div class="team">
+                ${bandera2}
+                <span class="team-name">${partido.equipo_2}</span>
+              </div>
+            </div>
+            <div class="match-footer">
+              <span>📅 ${fecha}</span>
+            </div>
+            ${btnVerDetalle}
+            ${btnCargarResultado}
+          `;
+          container.appendChild(card);
+        });
+      }
+
+      function cambiarTab(tab) {
+        document.getElementById("seccion-predicciones").style.display =
+          tab === "predicciones" ? "block" : "none";
+        document.getElementById("seccion-dashboard").style.display =
+          tab === "dashboard" ? "block" : "none";
+        document.getElementById("tab-predicciones").classList.toggle("tab-activo", tab === "predicciones");
+        document.getElementById("tab-dashboard").classList.toggle("tab-activo", tab === "dashboard");
+        if (tab === "dashboard") renderizarResultados();
+      }
+
       const SUPABASE_URL = "https://agwaokiruxodrhcljrrh.supabase.co";
       const SUPABASE_KEY = "sb_publishable_CwHTOPavJaW6D5pKKDBZ_w_Sf9y1d76";
       const { createClient } = supabase;
@@ -395,6 +861,7 @@
       let listaPartidos = [];
       let usuarioActual = null;
       let prediccionesUsuario = {};
+      let partidoParaResultadoId = null;
 
       function obtenerInicioPartido(partido) {
         const [anio, mes, dia] = partido.fecha.split("-").map(Number);
@@ -689,9 +1156,151 @@
       }
 
       window.onclick = function (event) {
-        const modal = document.getElementById("predictionModal");
-        if (event.target == modal) modal.style.display = "none";
+        const predModal = document.getElementById("predictionModal");
+        if (event.target == predModal) predModal.style.display = "none";
+        const resModal = document.getElementById("resultadoModal");
+        if (event.target == resModal) resModal.style.display = "none";
+        const detModal = document.getElementById("detalleModal");
+        if (event.target == detModal) detModal.style.display = "none";
       };
+
+      function calcularPuntos(prediccion, partido) {
+        if (partido.resultado_equipo_1 === null || partido.resultado_equipo_2 === null)
+          return 0;
+        if (!prediccion) return 0;
+        const g1 = prediccion.goles_equipo_1;
+        const g2 = prediccion.goles_equipo_2;
+        const r1 = partido.resultado_equipo_1;
+        const r2 = partido.resultado_equipo_2;
+        if (g1 === r1 && g2 === r2) return 3;
+        if (Math.sign(g1 - g2) === Math.sign(r1 - r2)) return 1;
+        return 0;
+      }
+
+      async function abrirModalDetalle(partidoId) {
+        const partido = listaPartidos.find((p) => p.id === partidoId);
+        if (!partido) return;
+
+        document.getElementById("detalle-fase").innerText = partido.fase || "R32";
+        document.getElementById("detalle-resultado").innerText =
+          `${partido.resultado_equipo_1} - ${partido.resultado_equipo_2}`;
+        document.getElementById("detalle-equipos").innerText =
+          `${partido.equipo_1} vs ${partido.equipo_2}`;
+
+        const container = document.getElementById("detalle-tabla-container");
+        container.innerHTML =
+          '<p class="estado-vacio">Cargando...</p>';
+
+        document.getElementById("detalleModal").style.display = "flex";
+
+        const { data, error } = await supabaseClient
+          .from("predicciones")
+          .select("goles_equipo_1, goles_equipo_2, usuarios(nombre)")
+          .eq("partido_id", partidoId);
+
+        if (error) {
+          console.error(error);
+          container.innerHTML =
+            '<p class="estado-vacio" style="color:#e74c3c">Error al cargar predicciones.</p>';
+          return;
+        }
+
+        if (!data.length) {
+          container.innerHTML =
+            '<p class="estado-vacio">Nadie predijo este partido.</p>';
+          return;
+        }
+
+        const filas = data
+          .map((pred) => {
+            const puntos = calcularPuntos(pred, partido);
+            const color =
+              puntos === 3 ? "#2ecc71" : puntos === 1 ? "#f1c40f" : "var(--text-muted)";
+            return `
+              <tr>
+                <td>${pred.usuarios.nombre}</td>
+                <td style="text-align:center">${pred.goles_equipo_1} - ${pred.goles_equipo_2}</td>
+                <td style="text-align:center;color:${color};font-weight:bold">${puntos}</td>
+              </tr>`;
+          })
+          .join("");
+
+        container.innerHTML = `
+          <table class="tabla-detalle">
+            <thead>
+              <tr>
+                <th>Usuario</th>
+                <th style="text-align:center">Predicción</th>
+                <th style="text-align:center">Pts</th>
+              </tr>
+            </thead>
+            <tbody>${filas}</tbody>
+          </table>`;
+      }
+
+      function abrirModalCargarResultado(partidoId) {
+        const partido = listaPartidos.find((p) => p.id === partidoId);
+        if (!partido) return;
+
+        partidoParaResultadoId = partidoId;
+        document.getElementById("resultado-nombre-1").innerText = partido.equipo_1;
+        document.getElementById("resultado-nombre-2").innerText = partido.equipo_2;
+        document.getElementById("resultado-score1").value =
+          partido.resultado_equipo_1 ?? "";
+        document.getElementById("resultado-score2").value =
+          partido.resultado_equipo_2 ?? "";
+
+        const btn = document.getElementById("btn-guardar-resultado");
+        btn.disabled = false;
+        btn.innerText = "💾 Guardar resultado";
+
+        document.getElementById("resultadoModal").style.display = "flex";
+      }
+
+      async function guardarResultado() {
+        const score1 = document.getElementById("resultado-score1").value;
+        const score2 = document.getElementById("resultado-score2").value;
+
+        if (score1 === "" || score2 === "") {
+          alert("Ingresá ambos marcadores.");
+          return;
+        }
+        if (parseInt(score1, 10) < 0 || parseInt(score2, 10) < 0) {
+          alert("Los goles no pueden ser negativos.");
+          return;
+        }
+
+        const btn = document.getElementById("btn-guardar-resultado");
+        btn.disabled = true;
+        btn.innerText = "Guardando...";
+
+        try {
+          const { error } = await supabaseClient
+            .from("partidos")
+            .update({
+              resultado_equipo_1: parseInt(score1, 10),
+              resultado_equipo_2: parseInt(score2, 10),
+            })
+            .eq("id", partidoParaResultadoId);
+
+          if (error) throw error;
+
+          const idx = listaPartidos.findIndex((p) => p.id === partidoParaResultadoId);
+          if (idx !== -1) {
+            listaPartidos[idx].resultado_equipo_1 = parseInt(score1, 10);
+            listaPartidos[idx].resultado_equipo_2 = parseInt(score2, 10);
+          }
+
+          document.getElementById("resultadoModal").style.display = "none";
+          renderizarResultados();
+        } catch (error) {
+          console.error(error);
+          alert("Error al guardar el resultado. Revisá permisos en Supabase.");
+        } finally {
+          btn.disabled = false;
+          btn.innerText = "💾 Guardar resultado";
+        }
+      }
 
       async function guardarPrediccion() {
         const goles1 = document.getElementById("score1").value;

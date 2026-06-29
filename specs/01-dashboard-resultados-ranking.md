@@ -1,6 +1,6 @@
 # 01-dashboard-resultados-ranking
 
-- **Estado:** Aprobado
+- **Estado:** Implementado
 - **Fecha:** 2026-06-29
 - **Dependencias:** ninguna (primer spec del proyecto)
 - **Objetivo:** Agregar un dashboard con vista de resultados de partidos y ranking de usuarios, accesible mediante tabs en el header de la página existente.
