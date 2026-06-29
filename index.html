@@ -939,12 +939,7 @@
       let partidoParaResultadoId = null;
 
       function obtenerInicioPartido(partido) {
-        const [anio, mes, dia] = partido.fecha.split("-").map(Number);
-        const partesHora = partido.hora.substring(0, 8).split(":");
-        const horas = parseInt(partesHora[0], 10);
-        const minutos = parseInt(partesHora[1], 10);
-        const segundos = parseInt(partesHora[2] || "0", 10);
-        return new Date(anio, mes - 1, dia, horas, minutos, segundos);
+        return new Date(`${partido.fecha}T${partido.hora.substring(0, 8)}-05:00`);
       }
 
       function partidoAbiertoParaPrediccion(partido) {
@@ -1175,11 +1170,9 @@
       }
 
       function formatearFechaPartido(fecha, hora) {
-        const fechaFormateada = new Date(fecha + "T00:00:00").toLocaleDateString(
-          "es-ES",
-          { month: "short", day: "numeric" },
-        );
-        const horaFormateada = hora.substring(0, 5);
+        const dt = new Date(`${fecha}T${hora.substring(0, 8)}-05:00`);
+        const fechaFormateada = dt.toLocaleDateString("es-ES", { month: "short", day: "numeric" });
+        const horaFormateada = dt.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit", hour12: false });
         return { fecha: fechaFormateada, hora: horaFormateada };
       }
 
