@@ -592,6 +592,79 @@
         background-color: var(--accent-color);
         color: #000;
       }
+
+      /* Sub-tab Predicciones — toggle de agrupación */
+      .pred-toggle {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 20px;
+        background-color: var(--card-bg);
+        padding: 6px;
+        border-radius: 25px;
+      }
+
+      .pred-toggle-btn {
+        flex: 1;
+        padding: 8px;
+        border: none;
+        border-radius: 20px;
+        font-weight: bold;
+        font-size: 13px;
+        cursor: pointer;
+        background-color: transparent;
+        color: var(--text-muted);
+        transition: background-color 0.2s, color 0.2s;
+      }
+
+      .pred-toggle-btn.pred-toggle-activo {
+        background-color: #2c3545;
+        color: var(--text-color);
+      }
+
+      .pred-bloque {
+        background-color: var(--card-bg);
+        border-radius: 16px;
+        padding: 16px 20px;
+        margin-bottom: 15px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+      }
+
+      .pred-bloque-header {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 12px;
+      }
+
+      .pred-fecha {
+        color: var(--text-muted);
+        font-size: 13px;
+      }
+
+      .tabla-pred-global {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
+      }
+
+      .tabla-pred-global th {
+        color: var(--text-muted);
+        font-size: 12px;
+        text-align: left;
+        padding: 6px 8px;
+        border-bottom: 1px solid #2c3545;
+        text-transform: uppercase;
+      }
+
+      .tabla-pred-global td {
+        padding: 8px;
+        border-bottom: 1px solid #2c3545;
+      }
+
+      .tabla-pred-global tr:last-child td {
+        border-bottom: none;
+      }
     </style>
   </head>
   <body>
@@ -636,6 +709,7 @@
         <div class="subtabs-header">
           <button class="subtab-btn subtab-activo" id="subtab-resultados" onclick="cambiarSubtab('resultados')">Resultados</button>
           <button class="subtab-btn" id="subtab-ranking" onclick="cambiarSubtab('ranking')">Ranking</button>
+          <button class="subtab-btn" id="subtab-predicciones-global" onclick="cambiarSubtab('predicciones-global')">Predicciones</button>
         </div>
 
         <div id="seccion-resultados">
@@ -644,6 +718,9 @@
 
         <div id="seccion-ranking" style="display:none">
           <!-- se construye en el paso 7 -->
+        </div>
+
+        <div id="seccion-predicciones-global" style="display:none">
         </div>
       </div>
     </div>
@@ -763,10 +840,138 @@
           subtab === "resultados" ? "block" : "none";
         document.getElementById("seccion-ranking").style.display =
           subtab === "ranking" ? "block" : "none";
+        document.getElementById("seccion-predicciones-global").style.display =
+          subtab === "predicciones-global" ? "block" : "none";
         document.getElementById("subtab-resultados").classList.toggle("subtab-activo", subtab === "resultados");
         document.getElementById("subtab-ranking").classList.toggle("subtab-activo", subtab === "ranking");
+        document.getElementById("subtab-predicciones-global").classList.toggle("subtab-activo", subtab === "predicciones-global");
         if (subtab === "resultados") renderizarResultados();
         if (subtab === "ranking") renderizarRanking();
+        if (subtab === "predicciones-global") {
+          const container = document.getElementById("seccion-predicciones-global");
+          container.innerHTML = `
+            <div class="pred-toggle">
+              <button class="pred-toggle-btn pred-toggle-activo" id="toggle-partido" onclick="mostrarPrediccionesGlobal('partido')">Partido</button>
+              <button class="pred-toggle-btn" id="toggle-usuario" onclick="mostrarPrediccionesGlobal('usuario')">Usuario</button>
+            </div>
+            <div id="pred-contenido"></div>
+          `;
+          mostrarPrediccionesGlobal("partido");
+        }
+      }
+
+      async function cargarTodasLasPredicciones() {
+        const idsIniciados = listaPartidos
+          .filter((p) => !partidoAbiertoParaPrediccion(p))
+          .map((p) => p.id);
+
+        const { data: preds, error: errPreds } = idsIniciados.length
+          ? await supabaseClient
+              .from("predicciones")
+              .select("partido_id, goles_equipo_1, goles_equipo_2, usuarios(nombre)")
+              .in("partido_id", idsIniciados)
+          : { data: [], error: null };
+
+        if (errPreds) throw errPreds;
+
+        prediccionesGlobales = (preds || []).map((d) => ({
+          partido_id: d.partido_id,
+          usuario_nombre: d.usuarios.nombre,
+          goles_equipo_1: d.goles_equipo_1,
+          goles_equipo_2: d.goles_equipo_2,
+        }));
+
+        todosLosUsuarios = [...new Set(
+          (preds || [])
+            .filter((d) => d.usuarios.nombre !== "adminmlc")
+            .map((d) => d.usuarios.nombre),
+        )].sort();
+      }
+
+      async function mostrarPrediccionesGlobal(agrupacion) {
+        const togglePartido = document.getElementById("toggle-partido");
+        const toggleUsuario = document.getElementById("toggle-usuario");
+        if (togglePartido) togglePartido.classList.toggle("pred-toggle-activo", agrupacion === "partido");
+        if (toggleUsuario) toggleUsuario.classList.toggle("pred-toggle-activo", agrupacion === "usuario");
+
+        const contenido = document.getElementById("pred-contenido");
+        contenido.innerHTML = '<p class="estado-vacio">Cargando...</p>';
+
+        try {
+          await cargarTodasLasPredicciones();
+        } catch (e) {
+          console.error(e);
+          contenido.innerHTML = '<p class="estado-vacio" style="color:#e74c3c">Error al cargar predicciones.</p>';
+          return;
+        }
+
+        const partidosIniciados = listaPartidos.filter((p) => !partidoAbiertoParaPrediccion(p));
+
+        if (!partidosIniciados.length) {
+          contenido.innerHTML = '<p class="estado-vacio">Aún no ha comenzado ningún partido.</p>';
+          return;
+        }
+
+        if (agrupacion === "partido") {
+          let html = "";
+          partidosIniciados.forEach((partido) => {
+            const { fecha } = formatearFechaPartido(partido.fecha, partido.hora);
+            const preds = prediccionesGlobales.filter((p) => p.partido_id === partido.id);
+            const filas = todosLosUsuarios
+              .map((nombre) => {
+                const pred = preds.find((p) => p.usuario_nombre === nombre);
+                return `<tr>
+                  <td>${nombre}</td>
+                  <td style="text-align:center">${pred ? `${pred.goles_equipo_1} - ${pred.goles_equipo_2}` : "—"}</td>
+                </tr>`;
+              })
+              .join("");
+            html += `
+              <div class="pred-bloque">
+                <div class="pred-bloque-header">
+                  <span class="badge-fase">${partido.fase || "R32"}</span>
+                  <strong>${partido.equipo_1} vs ${partido.equipo_2}</strong>
+                  <span class="pred-fecha">📅 ${fecha}</span>
+                </div>
+                <table class="tabla-pred-global">
+                  <thead><tr><th>Usuario</th><th style="text-align:center">Predicción</th></tr></thead>
+                  <tbody>${filas || '<tr><td colspan="2" style="text-align:center;color:var(--text-muted)">Nadie predijo este partido</td></tr>'}</tbody>
+                </table>
+              </div>`;
+          });
+          contenido.innerHTML = html;
+
+        } else {
+          if (!todosLosUsuarios.length) {
+            contenido.innerHTML = '<p class="estado-vacio">No hay participantes registrados.</p>';
+            return;
+          }
+          let html = "";
+          todosLosUsuarios.forEach((nombre) => {
+            const preds = prediccionesGlobales.filter((p) => p.usuario_nombre === nombre);
+            const filas = partidosIniciados
+              .map((partido) => {
+                const { fecha } = formatearFechaPartido(partido.fecha, partido.hora);
+                const pred = preds.find((p) => p.partido_id === partido.id);
+                return `<tr>
+                  <td>${partido.equipo_1} vs ${partido.equipo_2} <span class="pred-fecha">📅 ${fecha}</span></td>
+                  <td style="text-align:center">${pred ? `${pred.goles_equipo_1} - ${pred.goles_equipo_2}` : "—"}</td>
+                </tr>`;
+              })
+              .join("");
+            html += `
+              <div class="pred-bloque">
+                <div class="pred-bloque-header">
+                  <strong style="font-size:16px">${nombre}</strong>
+                </div>
+                <table class="tabla-pred-global">
+                  <thead><tr><th>Partido</th><th style="text-align:center">Predicción</th></tr></thead>
+                  <tbody>${filas}</tbody>
+                </table>
+              </div>`;
+          });
+          contenido.innerHTML = html;
+        }
       }
 
       async function renderizarRanking() {
@@ -802,14 +1007,19 @@
           return;
         }
 
-        const puntajes = {};
+        const usuarioMap = {};
         todosUsuarios.forEach((u) => {
-          puntajes[u.id] = { nombre: u.nombre, puntos: 0 };
+          if (u.nombre !== "adminmlc") usuarioMap[u.id] = u.nombre;
         });
 
+        const puntajes = {};
         predicciones.forEach((pred) => {
           const partido = listaPartidos.find((p) => p.id === pred.partido_id);
-          if (!partido || !puntajes[pred.usuario_id]) return;
+          const nombre = usuarioMap[pred.usuario_id];
+          if (!partido || !nombre) return;
+          if (!puntajes[pred.usuario_id]) {
+            puntajes[pred.usuario_id] = { nombre, puntos: 0 };
+          }
           puntajes[pred.usuario_id].puntos += calcularPuntos(pred, partido);
         });
 
@@ -937,6 +1147,8 @@
       let usuarioActual = null;
       let prediccionesUsuario = {};
       let partidoParaResultadoId = null;
+      let prediccionesGlobales = [];
+      let todosLosUsuarios = [];
 
       function obtenerInicioPartido(partido) {
         return new Date(`${partido.fecha}T${partido.hora.substring(0, 8)}-05:00`);
