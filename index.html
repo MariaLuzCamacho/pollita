@@ -744,7 +744,7 @@
         <div class="subtabs-header">
           <button class="subtab-btn subtab-activo" id="subtab-resultados" onclick="cambiarSubtab('resultados')">Resultados</button>
           <button class="subtab-btn" id="subtab-ranking" onclick="cambiarSubtab('ranking')">Ranking</button>
-          <button class="subtab-btn" id="subtab-predicciones-global" onclick="cambiarSubtab('predicciones-global')">Predicciones</button>
+          <button class="subtab-btn" id="subtab-predicciones-global" onclick="cambiarSubtab('predicciones-global')" style="display:none">Predicciones</button>
         </div>
 
         <div id="seccion-resultados">
@@ -1351,11 +1351,17 @@
         el.className = `user-status ${tipo}`.trim();
       }
 
+      function actualizarVisibilidadSubtabPredicciones() {
+        const esAdmin = usuarioActual?.nombre === "adminmlc";
+        document.getElementById("subtab-predicciones-global").style.display = esAdmin ? "" : "none";
+      }
+
       function guardarUsuarioLocal(usuario) {
         usuarioActual = usuario;
         localStorage.setItem("pollita_usuario_id", usuario.id);
         localStorage.setItem("pollita_usuario_nombre", usuario.nombre);
         mostrarEstadoUsuario(`Registrado como ${usuario.nombre}`, "ok");
+        actualizarVisibilidadSubtabPredicciones();
       }
 
       async function obtenerOCrearUsuario(nombre) {
@@ -1876,6 +1882,7 @@
           document.getElementById("username").value = nombreGuardado;
           usuarioActual = { id: idGuardado, nombre: nombreGuardado };
           mostrarEstadoUsuario(`Registrado como ${nombreGuardado}`, "ok");
+          actualizarVisibilidadSubtabPredicciones();
           await cargarPrediccionesUsuario(idGuardado);
         }
 
