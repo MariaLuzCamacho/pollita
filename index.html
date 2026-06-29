@@ -1,0 +1,776 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Polla Mundial 2026</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+      :root {
+        --bg-color: #121824;
+        --card-bg: #1e2530;
+        --accent-color: #f1c40f;
+        --text-color: #ffffff;
+        --text-muted: #8b94a5;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background-color: var(--bg-color);
+        color: var(--text-color);
+        margin: 0;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .container {
+        width: 100%;
+        max-width: 500px;
+      }
+
+      h1 {
+        text-align: center;
+        font-size: 24px;
+        margin-bottom: 25px;
+      }
+
+      .user-section {
+        background-color: var(--card-bg);
+        padding: 15px;
+        border-radius: 12px;
+        margin-bottom: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .btn-register {
+        background-color: #3498db;
+        color: #fff;
+        border: none;
+        width: 100%;
+        padding: 12px;
+        border-radius: 25px;
+        font-weight: bold;
+        font-size: 15px;
+        cursor: pointer;
+      }
+
+      .user-status {
+        font-size: 13px;
+        color: var(--text-muted);
+        text-align: center;
+        min-height: 18px;
+      }
+
+      .user-status.ok {
+        color: #2ecc71;
+      }
+
+      .user-status.error {
+        color: #e74c3c;
+      }
+
+      input {
+        background-color: #121824;
+        border: 1px solid #313d4f;
+        color: white;
+        padding: 12px;
+        border-radius: 8px;
+        font-size: 16px;
+      }
+
+      /* Tarjeta de Partido */
+      .match-card {
+        background-color: var(--card-bg);
+        border-radius: 16px;
+        padding: 20px;
+        margin-bottom: 15px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+      }
+
+      .match-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+      }
+
+      .badge-fase {
+        background-color: #2c3545;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: bold;
+        color: var(--text-muted);
+      }
+
+      .status-prog {
+        color: #3498db;
+        font-size: 12px;
+        text-transform: uppercase;
+        font-weight: bold;
+      }
+
+      .status-cerrado {
+        color: #e74c3c;
+        font-size: 12px;
+        text-transform: uppercase;
+        font-weight: bold;
+      }
+
+      .prediccion-guardada {
+        text-align: center;
+        color: var(--accent-color);
+        font-size: 13px;
+        font-weight: bold;
+        margin-bottom: 10px;
+      }
+
+      .match-teams {
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+        margin-bottom: 20px;
+      }
+
+      .team {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 35%;
+        text-align: center;
+      }
+
+      .flag {
+        width: 50px;
+        height: 35px;
+        object-fit: cover;
+        border-radius: 6px;
+        margin-bottom: 8px;
+      }
+
+      .team-name {
+        font-weight: bold;
+        font-size: 16px;
+      }
+
+      .vs-divider {
+        color: var(--text-muted);
+        font-weight: bold;
+      }
+
+      .match-footer {
+        display: flex;
+        justify-content: space-between;
+        color: var(--text-muted);
+        font-size: 13px;
+        border-top: 1px solid #2c3545;
+        padding-top: 12px;
+        margin-bottom: 15px;
+      }
+
+      .btn-predict {
+        background-color: var(--accent-color);
+        color: #000;
+        border: none;
+        width: 100%;
+        padding: 12px;
+        border-radius: 25px;
+        font-weight: bold;
+        font-size: 15px;
+        cursor: pointer;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .btn-predict:disabled {
+        background-color: #3a4454;
+        color: #8b94a5;
+        cursor: not-allowed;
+        opacity: 0.85;
+      }
+
+      .btn-save:disabled {
+        background-color: #3a4454;
+        color: #8b94a5;
+        cursor: not-allowed;
+        opacity: 0.85;
+      }
+
+      /* --- MODAL FIEL A LA IMAGEN 2 --- */
+      .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.75);
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+      }
+
+      .modal-content {
+        background-color: var(--card-bg);
+        padding: 25px;
+        border-radius: 20px;
+        width: 90%;
+        max-width: 420px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      }
+
+      .modal-header-info {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+      }
+
+      /* El contenedor central de la predicción */
+      .prediction-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin: 25px 0;
+      }
+
+      .modal-team {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 30%;
+      }
+
+      .modal-team .flag {
+        width: 60px;
+        height: 40px;
+      }
+
+      .modal-team .name {
+        font-weight: bold;
+        font-size: 18px;
+        margin-top: 8px;
+      }
+
+      .modal-team .code {
+        font-size: 12px;
+        color: var(--text-muted);
+        text-transform: uppercase;
+      }
+
+      /* Bloque central de marcadores */
+      .score-block {
+        display: flex;
+        align-items: center;
+        background-color: rgba(18, 24, 36, 0.6);
+        border: 1px dashed #313d4f;
+        border-radius: 14px;
+        padding: 10px 15px;
+        gap: 10px;
+      }
+
+      .input-score {
+        width: 45px;
+        height: 45px;
+        background-color: #121824;
+        border: 1px solid #2c3545;
+        color: var(--accent-color);
+        text-align: center;
+        font-size: 22px;
+        font-weight: bold;
+        border-radius: 8px;
+      }
+
+      /* Quitar flechas del input number */
+      .input-score::-webkit-inner-spin-button,
+      .input-score::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+      }
+
+      .modal-vs {
+        color: var(--text-muted);
+        font-weight: bold;
+        font-size: 14px;
+      }
+
+      .btn-save {
+        background-color: var(--accent-color);
+        color: #000;
+        border: none;
+        padding: 14px;
+        border-radius: 25px;
+        font-weight: bold;
+        font-size: 16px;
+        cursor: pointer;
+        width: 100%;
+        margin-top: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>🏆 MUNDIAL 2026 - PREDICCIONES</h1>
+
+      <div class="user-section">
+        <label for="username">Nombre del Participante:</label>
+        <input
+          type="text"
+          id="username"
+          placeholder="Ej: Tio Carlos"
+        />
+        <button class="btn-register" type="button" onclick="registrarUsuario()">
+          👤 Registrarme
+        </button>
+        <p id="user-status" class="user-status"></p>
+      </div>
+
+      <div id="partidos-container"></div>
+    </div>
+
+    <div id="predictionModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header-info">
+          <span class="badge-fase" id="modal-fase">R32</span>
+          <span class="status-prog">PROGRAMADO</span>
+        </div>
+
+        <div class="prediction-row">
+          <div class="modal-team">
+            <img id="modal-img-1" class="flag" src="" alt="" />
+            <span id="modal-name-1" class="name">---</span>
+            <span id="modal-code-1" class="code">---</span>
+          </div>
+
+          <div class="score-block">
+            <input
+              type="number"
+              id="score1"
+              class="input-score"
+              placeholder="?"
+              min="0"
+            />
+            <span class="modal-vs">VS</span>
+            <input
+              type="number"
+              id="score2"
+              class="input-score"
+              placeholder="?"
+              min="0"
+            />
+          </div>
+
+          <div class="modal-team">
+            <img id="modal-img-2" class="flag" src="" alt="" />
+            <span id="modal-name-2" class="name">---</span>
+            <span id="modal-code-2" class="code">---</span>
+          </div>
+        </div>
+
+        <div class="match-footer" style="justify-content: center; gap: 20px">
+          <span id="modal-date">📅 -- jun, --:--</span>
+          <span id="modal-location">📍 Los Ángeles</span>
+        </div>
+
+        <button class="btn-save" id="btn-guardar-prediccion" onclick="guardarPrediccion()">
+          ✏️ Confirmar Predicción
+        </button>
+      </div>
+    </div>
+
+    <script>
+      const SUPABASE_URL = "https://agwaokiruxodrhcljrrh.supabase.co";
+      const SUPABASE_KEY = "sb_publishable_CwHTOPavJaW6D5pKKDBZ_w_Sf9y1d76";
+      const { createClient } = supabase;
+      const supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+      let partidoSeleccionadoId = null;
+      let partidoSeleccionadoIndex = null;
+      let listaPartidos = [];
+      let usuarioActual = null;
+      let prediccionesUsuario = {};
+
+      function obtenerInicioPartido(partido) {
+        const [anio, mes, dia] = partido.fecha.split("-").map(Number);
+        const partesHora = partido.hora.substring(0, 8).split(":");
+        const horas = parseInt(partesHora[0], 10);
+        const minutos = parseInt(partesHora[1], 10);
+        const segundos = parseInt(partesHora[2] || "0", 10);
+        return new Date(anio, mes - 1, dia, horas, minutos, segundos);
+      }
+
+      function partidoAbiertoParaPrediccion(partido) {
+        return new Date() < obtenerInicioPartido(partido);
+      }
+
+      async function cargarPrediccionesUsuario(usuarioId) {
+        if (!usuarioId) {
+          prediccionesUsuario = {};
+          return;
+        }
+
+        const { data, error } = await supabaseClient
+          .from("predicciones")
+          .select("partido_id, goles_equipo_1, goles_equipo_2")
+          .eq("usuario_id", usuarioId);
+
+        if (error) {
+          console.error(error);
+          prediccionesUsuario = {};
+          return;
+        }
+
+        prediccionesUsuario = {};
+        data.forEach((prediccion) => {
+          prediccionesUsuario[prediccion.partido_id] = prediccion;
+        });
+      }
+
+      function textoBotonPrediccion(partido) {
+        const prediccion = prediccionesUsuario[partido.id];
+        if (!partidoAbiertoParaPrediccion(partido)) {
+          return "🔒 Predicciones cerradas";
+        }
+        return prediccion ? "✏️ Editar predicción" : "✏️ Hacer predicción";
+      }
+
+      function renderizarTarjetaPartido(partido, index) {
+        const { fecha, hora } = formatearFechaPartido(partido.fecha, partido.hora);
+        const abierto = partidoAbiertoParaPrediccion(partido);
+        const prediccion = prediccionesUsuario[partido.id];
+        const bandera1 = partido.bandera_1
+          ? `<img class="flag" src="${partido.bandera_1}" alt="">`
+          : "";
+        const bandera2 = partido.bandera_2
+          ? `<img class="flag" src="${partido.bandera_2}" alt="">`
+          : "";
+        const prediccionHtml = prediccion
+          ? `<p class="prediccion-guardada">Tu predicción: ${prediccion.goles_equipo_1} - ${prediccion.goles_equipo_2}</p>`
+          : "";
+
+        const card = document.createElement("div");
+        card.className = "match-card";
+        card.dataset.index = index;
+        card.innerHTML = `
+              <div class="match-header">
+                  <span class="badge-fase">${partido.fase || "R32"}</span>
+                  <span class="${abierto ? "status-prog" : "status-cerrado"}">${abierto ? "Programado" : "Cerrado"}</span>
+              </div>
+              <div class="match-teams">
+                  <div class="team">
+                      ${bandera1}
+                      <span class="team-name">${partido.equipo_1}</span>
+                  </div>
+                  <div class="vs-divider">VS</div>
+                  <div class="team">
+                      ${bandera2}
+                      <span class="team-name">${partido.equipo_2}</span>
+                  </div>
+              </div>
+              <div class="match-footer">
+                  <span>📅 ${fecha}, ${hora}</span>
+                  <span>📍 Por definir</span>
+              </div>
+              ${prediccionHtml}
+              <button class="btn-predict" data-index="${index}" ${abierto ? "" : "disabled"}>
+                  ${textoBotonPrediccion(partido)}
+              </button>
+          `;
+
+        const boton = card.querySelector(".btn-predict");
+        if (abierto) {
+          boton.addEventListener("click", () => abrirModal(index));
+        }
+
+        return card;
+      }
+
+      function actualizarEstadoBotonesPartidos() {
+        listaPartidos.forEach((partido, index) => {
+          const card = document.querySelector(`.match-card[data-index="${index}"]`);
+          if (!card) return;
+
+          const boton = card.querySelector(".btn-predict");
+          const estado = card.querySelector(".match-header span:last-child");
+          const abierto = partidoAbiertoParaPrediccion(partido);
+
+          boton.disabled = !abierto;
+          boton.innerText = textoBotonPrediccion(partido);
+          estado.className = abierto ? "status-prog" : "status-cerrado";
+          estado.innerText = abierto ? "Programado" : "Cerrado";
+
+          boton.replaceWith(boton.cloneNode(true));
+          const botonNuevo = card.querySelector(".btn-predict");
+          if (abierto) {
+            botonNuevo.addEventListener("click", () => abrirModal(index));
+          }
+        });
+      }
+
+      function mostrarEstadoUsuario(mensaje, tipo = "") {
+        const el = document.getElementById("user-status");
+        el.innerText = mensaje;
+        el.className = `user-status ${tipo}`.trim();
+      }
+
+      function guardarUsuarioLocal(usuario) {
+        usuarioActual = usuario;
+        localStorage.setItem("pollita_usuario_id", usuario.id);
+        localStorage.setItem("pollita_usuario_nombre", usuario.nombre);
+        mostrarEstadoUsuario(`Registrado como ${usuario.nombre}`, "ok");
+      }
+
+      async function obtenerOCrearUsuario(nombre) {
+        const { data: existente, error: selectError } = await supabaseClient
+          .from("usuarios")
+          .select("id, nombre")
+          .eq("nombre", nombre)
+          .maybeSingle();
+
+        if (selectError) throw selectError;
+        if (existente) return existente;
+
+        const { data: nuevo, error: insertError } = await supabaseClient
+          .from("usuarios")
+          .insert([{ nombre }])
+          .select("id, nombre")
+          .single();
+
+        if (insertError) throw insertError;
+        return nuevo;
+      }
+
+      async function registrarUsuario() {
+        const nombre = document.getElementById("username").value.trim();
+
+        if (!nombre) {
+          mostrarEstadoUsuario("Escribe tu nombre para registrarte.", "error");
+          return;
+        }
+
+        try {
+          const usuario = await obtenerOCrearUsuario(nombre);
+          guardarUsuarioLocal(usuario);
+          await cargarPrediccionesUsuario(usuario.id);
+          await cargarPartidos();
+          alert(`¡Listo! Ya puedes hacer predicciones como ${usuario.nombre}.`);
+        } catch (error) {
+          console.error(error);
+          mostrarEstadoUsuario(
+            "No se pudo registrar. Revisa permisos RLS en Supabase.",
+            "error",
+          );
+        }
+      }
+
+      async function asegurarUsuarioRegistrado() {
+        if (usuarioActual?.id) return usuarioActual;
+
+        const nombre = document.getElementById("username").value.trim();
+        if (!nombre) {
+          throw new Error("Debes registrarte con tu nombre primero.");
+        }
+
+        const usuario = await obtenerOCrearUsuario(nombre);
+        guardarUsuarioLocal(usuario);
+        return usuario;
+      }
+
+      function formatearFechaPartido(fecha, hora) {
+        const fechaFormateada = new Date(fecha + "T00:00:00").toLocaleDateString(
+          "es-ES",
+          { month: "short", day: "numeric" },
+        );
+        const horaFormateada = hora.substring(0, 5);
+        return { fecha: fechaFormateada, hora: horaFormateada };
+      }
+
+      async function cargarPartidos() {
+        if (usuarioActual?.id) {
+          await cargarPrediccionesUsuario(usuarioActual.id);
+        }
+
+        const { data: partidos, error } = await supabaseClient
+          .from("partidos")
+          .select("*")
+          .order("fecha", { ascending: true })
+          .order("hora", { ascending: true });
+
+        const container = document.getElementById("partidos-container");
+        container.innerHTML = "";
+
+        if (error) {
+          console.error(error);
+          container.innerHTML =
+            '<p style="color:#e74c3c;text-align:center">No se pudieron cargar los partidos.</p>';
+          return;
+        }
+
+        if (!partidos.length) {
+          container.innerHTML =
+            '<p style="color:var(--text-muted);text-align:center">No hay partidos registrados aún.</p>';
+          return;
+        }
+
+        listaPartidos = partidos;
+        partidos.forEach((partido, index) => {
+          container.appendChild(renderizarTarjetaPartido(partido, index));
+        });
+      }
+
+      function abrirModal(index) {
+        const nombreUsuario = document.getElementById("username").value.trim();
+
+        if (!nombreUsuario && !usuarioActual) {
+          alert("Regístrate con tu nombre antes de hacer una predicción.");
+          return;
+        }
+
+        const partido = listaPartidos[index];
+        if (!partido) return;
+
+        if (!partidoAbiertoParaPrediccion(partido)) {
+          alert("El tiempo para predecir este partido ya cerró.");
+          return;
+        }
+
+        partidoSeleccionadoId = partido.id;
+        partidoSeleccionadoIndex = index;
+
+        document.getElementById("modal-fase").innerText = partido.fase || "R32";
+
+        const img1 = document.getElementById("modal-img-1");
+        const img2 = document.getElementById("modal-img-2");
+
+        if (partido.bandera_1) {
+          img1.src = partido.bandera_1;
+          img1.style.display = "block";
+        } else {
+          img1.style.display = "none";
+        }
+
+        if (partido.bandera_2) {
+          img2.src = partido.bandera_2;
+          img2.style.display = "block";
+        } else {
+          img2.style.display = "none";
+        }
+
+        document.getElementById("modal-name-1").innerText = partido.equipo_1;
+        document.getElementById("modal-code-1").innerText = partido.equipo_1
+          .substring(0, 3)
+          .toUpperCase();
+
+        document.getElementById("modal-name-2").innerText = partido.equipo_2;
+        document.getElementById("modal-code-2").innerText = partido.equipo_2
+          .substring(0, 3)
+          .toUpperCase();
+
+        const { fecha, hora } = formatearFechaPartido(partido.fecha, partido.hora);
+        document.getElementById("modal-date").innerText = `📅 ${fecha}, ${hora}`;
+
+        const prediccion = prediccionesUsuario[partido.id];
+        document.getElementById("score1").value = prediccion?.goles_equipo_1 ?? "";
+        document.getElementById("score2").value = prediccion?.goles_equipo_2 ?? "";
+
+        const btnGuardar = document.getElementById("btn-guardar-prediccion");
+        btnGuardar.disabled = false;
+        btnGuardar.innerText = prediccion
+          ? "✏️ Actualizar Predicción"
+          : "✏️ Confirmar Predicción";
+
+        document.getElementById("predictionModal").style.display = "flex";
+      }
+
+      window.onclick = function (event) {
+        const modal = document.getElementById("predictionModal");
+        if (event.target == modal) modal.style.display = "none";
+      };
+
+      async function guardarPrediccion() {
+        const goles1 = document.getElementById("score1").value;
+        const goles2 = document.getElementById("score2").value;
+        const partido = listaPartidos[partidoSeleccionadoIndex];
+
+        if (!partido) {
+          alert("No se encontró el partido seleccionado.");
+          return;
+        }
+
+        if (!partidoAbiertoParaPrediccion(partido)) {
+          alert("El tiempo para predecir este partido ya cerró.");
+          document.getElementById("predictionModal").style.display = "none";
+          await cargarPartidos();
+          return;
+        }
+
+        if (goles1 === "" || goles2 === "") {
+          alert("Por favor, introduce el marcador completo.");
+          return;
+        }
+
+        if (parseInt(goles1, 10) < 0 || parseInt(goles2, 10) < 0) {
+          alert("Los goles no pueden ser negativos.");
+          return;
+        }
+
+        const btnGuardar = document.getElementById("btn-guardar-prediccion");
+        btnGuardar.disabled = true;
+        btnGuardar.innerText = "Guardando...";
+
+        try {
+          const usuario = await asegurarUsuarioRegistrado();
+
+          const { error } = await supabaseClient.from("predicciones").upsert(
+            {
+              usuario_id: usuario.id,
+              partido_id: partidoSeleccionadoId,
+              goles_equipo_1: parseInt(goles1, 10),
+              goles_equipo_2: parseInt(goles2, 10),
+            },
+            { onConflict: "usuario_id,partido_id" },
+          );
+
+          if (error) throw error;
+
+          prediccionesUsuario[partidoSeleccionadoId] = {
+            partido_id: partidoSeleccionadoId,
+            goles_equipo_1: parseInt(goles1, 10),
+            goles_equipo_2: parseInt(goles2, 10),
+          };
+
+          alert("¡Predicción guardada!");
+          document.getElementById("predictionModal").style.display = "none";
+          await cargarPartidos();
+        } catch (error) {
+          console.error(error);
+          alert("Error al guardar. Regístrate primero o revisa permisos en Supabase.");
+        } finally {
+          btnGuardar.disabled = false;
+          btnGuardar.innerText = "✏️ Confirmar Predicción";
+        }
+      }
+
+      document.addEventListener("DOMContentLoaded", async () => {
+        const nombreGuardado = localStorage.getItem("pollita_usuario_nombre");
+        const idGuardado = localStorage.getItem("pollita_usuario_id");
+
+        if (nombreGuardado && idGuardado) {
+          document.getElementById("username").value = nombreGuardado;
+          usuarioActual = { id: idGuardado, nombre: nombreGuardado };
+          mostrarEstadoUsuario(`Registrado como ${nombreGuardado}`, "ok");
+          await cargarPrediccionesUsuario(idGuardado);
+        }
+
+        await cargarPartidos();
+        setInterval(actualizarEstadoBotonesPartidos, 30000);
+      });
+    </script>
+  </body>
+</html>

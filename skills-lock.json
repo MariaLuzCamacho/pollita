@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "skills": {
+    "caveman": {
+      "source": "juliusbrussee/caveman",
+      "sourceType": "github",
+      "skillPath": "skills/caveman/SKILL.md",
+      "computedHash": "b0e7741886c0c32270cedc1a2fc21c2879d90964d3ce00f24952de7064613404"
+    },
+    "spec": {
+      "source": "klerith/fernando-skills",
+      "sourceType": "github",
+      "skillPath": "skills/engineering/spec/SKILL.md",
+      "computedHash": "3689a7f700c733841d4bdd46d2685557437b9ed949b07002b204f597406c819a"
+    },
+    "spec-impl": {
+      "source": "klerith/fernando-skills",
+      "sourceType": "github",
+      "skillPath": "skills/engineering/spec-impl/SKILL.md",
+      "computedHash": "4a7f430d99adf4fdcb6930c6004ed71b4f5fbc93c866d6a70c8161f27d74b54f"
+    }
+  }
+}
